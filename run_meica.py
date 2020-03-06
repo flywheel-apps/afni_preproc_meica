@@ -6,6 +6,7 @@ import zipfile
 import logging
 import datetime
 import os
+import subprocess as sp
 from collections import OrderedDict
 from pathlib import Path
 
@@ -234,9 +235,8 @@ def log_system_resources():
 def build_afni_proc_call(config):
     
     # Starting command (This version of the gear doesn't change these steps
-    command = '/root/abin/afni_proc.py ' \
-              '-subj_id data ' \
-              '-blocks tshift align tlrc volreg mask combine blur scale regress '
+    command = ['/root/abin/afni_proc.py', '-subj_id', 'data', '-blocks', 'tshift',
+               'align', 'tlrc', 'volreg', 'mask', 'combine', 'blur', 'scale', 'regress']
     
     try:
         for key in supported_afni_opts.keys():
@@ -250,11 +250,11 @@ def build_afni_proc_call(config):
                 # a couple odd cases to address
                 if key == 'cost':
                     data = cost_lookup[config[key]]
-                    append = '-align_opts_aea -{key} {data} '.format(key=key, data=data)
+                    append = ['-align_opts_aea', '-{}'.format(key), '{}'.format(data)]
                     
                 elif key == 'combine_opts_tedana':
                     data = config['kdaw']
-                    append = '-{key} --kdaw={data} '.format(key=key, data=data)
+                    append = ['-{}'.format(key), '--kdaw={}'.format(data)]
                     
                 # If the expected type is Path
                 elif kind == Path or kind == int or kind == float:
@@ -265,16 +265,16 @@ def build_afni_proc_call(config):
                     else:
                         data = '{data}'.format(data=data)
                     
-                    append = '-{key} {data} '.format(key=key,data=data)
+                    append = ['-{}'.format(key), '{}'.format(data)]
                     
                 # If the expected type is string
                 elif kind == str:
-                    data=config[key]
+                    data = config[key]
                     
                     if isinstance(data,list):
                         data = ' '.join(data)
 
-                    append = '-{key} {data} '.format(key=key,data=data)
+                    append = ['-{}'.format(key), '{}'.format(data)]
                     
                 # If we need the type to be yn (yes/no), the data coming in is a boolean.
                 elif kind == 'yn':
@@ -284,15 +284,15 @@ def build_afni_proc_call(config):
                     else:
                         data = 'no'
 
-                    append = '-{key} {data} '.format(key=key,data=data)
+                    append = ['-{}'.format(key), '{}'.format(data)]
                     
                 elif kind == bool:
                     data = config[key]
                     append = ''
                     if data:
-                        append = '-{key} '.format(key=key,data=data)
+                        append = ['-{}'.format(key)]
                     
-                command = command + append
+                command.extend(append)
                 
     except Exception as e:
         log.exception(e)
@@ -505,6 +505,17 @@ def debug_main(context):
     
     command = build_afni_proc_call(config)
     print(command)
+    
+    os.chdir(output_directory)
+    pr = sp.Popen(command)
+    pr.wait()
+    
+    run_afni = ['tcsh', '-xef', 'proc.data', '2>&1', '|', 'tee output.proc.data']
+    
+    pr = sp.Popen(run_afni)
+    pr.wait()
+    
+    
     return 0
 
 if __name__ == '__main__':

@@ -2,8 +2,5 @@
 work/
 output/
 input/
-fwutil_job_run_local.py
-dockercall
-afni_proc_tedana.sh
 test/
 test/.*
