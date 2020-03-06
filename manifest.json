@@ -1,0 +1,199 @@
+{
+  "name": "me-ica",
+  "label": "ME-ICA: Multi-Echo Independent Components Analysis",
+  "description": "Multi-Echo Independent Components Analysis (ME-ICA) is a method for fMRI analysis and denoising based on the T2* decay of BOLD signals, as measured using multi-echo fMRI. ME-ICA decomposes multi-echo fMRI datasets into independent components (ICs) using FastICA, then categorizes ICs as BOLD or noise using their BOLD and non-BOLD weightings (measured as Kappa and Rho values, respectively). Removing non-BOLD weighted components robustly denoises data for motion, physiology and scanner artifacts, in a simple and physically principled way. Pipeline includes: 1. Preprocess multi-echo datasets and apply multi-echo ICA based on spatial concatenation. 2. Calculation of motion parameters based on images with highest contrast. 3. Application of motion correction and coregistration parameters. 4. EPI preprocessing (temporal alignment, smoothing, etc) in appropriate order. 5. Compute PCA and ICA in conjunction with TE-dependence analysis.",
+  "maintainer": "Flywheel <support@flywheel.io>",
+  "author": "Prantik Kundu",
+  "url": "https://github.com/ME-ICA/me-ica/blob/master/README.meica",
+  "source": "https://github.com/flywheel-apps/me-ica",
+  "cite": "Kundu, P., Brenowitz, N.D., Voon, V., Worbe, Y., Vertes, P.E., Inati, S.J., Saad, Z.S., Bandettini, P.A. & Bullmore, E.T. Integrated strategy for improving functional connectivity mapping using multiecho fMRI. PNAS (2013). Kundu, P., Inati, S.J., Evans, J.W., Luh, W.M. & Bandettini, P.A. Differentiating BOLD and non-BOLD signals in fMRI time series using multi-echo EPI. NeuroImage (2011). http://dx.doi.org/10.1016/j.neuroimage.2011.12.028",
+  "license": "Other",
+  "flywheel": "0",
+  "version": "0.4.0_20.0.18_dev5",
+  "custom": {
+    "gear-builder": {
+      "category": "analysis",
+      "image": "dbp2123/afni:0.0.1_20.0.18"
+    },
+    "docker-image": "dbp2123/afni:0.0.1_20.0.18",
+    "flywheel": {
+      "suite": "AFNI"
+    }
+  },
+  "config": {
+    "gear-log-level": {
+      "default": "DEBUG",
+      "description": "Gear Log verbosity level (ERROR|WARNING|INFO|DEBUG)",
+      "type": "string",
+      "enum": [
+        "ERROR",
+        "WARNING",
+        "INFO",
+        "DEBUG"
+      ]
+    },
+    "reg_echo": {
+      "description": "Multi-echo data is registered based on a single echo, with the resulting transformations being applied to all echoes.  Use this option to specify the 1-based echo used to drive registration.  Note that the echo used for driving registration should have reasonable tissue contrast. ",
+      "default": 2,
+      "type": "integer"
+    },
+    "tcat_remove_first_trs": {
+      "description": "specify how many TRs to remove from runs. default: 0.   Since it takes several seconds for the magnetization to reach a  steady state (at the beginning of each run), the initial TRs of  each run may have values that are significantly greater than the  later ones.  This option is used to specify how many TRs to  remove from the beginning of every run. If the number needs to vary across runs, then one number should  be specified per run.",
+      "default": 0,
+      "type": "integer"
+    },
+    "cost": {
+      "description": "Defines the 'cost' function that defines the registration between the source and the base.\n\t leastsq = Least Squares [Pearson Correlation]\n\t mutualinfo = Mutual Information [H(b)+H(s)-H(b,s)]\n\t corratio_mul = Correlation Ratio (Symmetrized*)\n\t norm_mutualinfo = Normalized MI [H(b,s)/(H(b)+H(s))]\n\t hellinger = Hellinger metric\n\t corratio_add = Correlation Ratio (Symmetrized+)\n\t corratio_uns = Correlation Ratio (Unsym)\n\t localPcorSigned = Local Pearson Correlation Signed\n\t localPcorAbs = Local Pearson Correlation Abs\n\t localPcor+= Local Pearson Signed + Others\n\t localPcorAbs+ = Local Pearson Abs + Others",
+      "type": "string",
+      "default": "localPcor+",
+      "enum": [
+        "leastsq",
+        "mutualinfo",
+        "corratio_mul",
+        "norm_mutualinfo",
+        "hellinger",
+        "corratio_add",
+        "corratio_uns",
+        "localPcorSigned",
+        "localPcorAbs",
+        "localPcor+",
+        "localPcorAbs+"
+      ]
+    },
+    "cpus": {
+      "description": "Maximum number of CPUs (OpenMP threads) to use. Default 2.",
+      "default": 2,
+      "type": "integer"
+    },
+    "tlrc_base": {
+      "description": "Standard space to register the data to",
+      "default":"MNI152_T1_2009c+tlrc",
+      "type": "string",
+      "enum": [
+        "MNI_caez_N27+tlrc",
+        "MNIa_caez_N27+tlrc",
+        "MNIa_caez_conin27_T1_18+tlrc",
+        "TT_N27+tlrc",
+        "TT_caez_colin27_T1_18+tlrc",
+        "MNI152_2009_template.nii.gz",
+        "MNI152_T1_2009c+tlrc",
+        "TT_152_2009c+tlrc"
+      ]
+    },
+
+    "kdaw": {
+      "description": "Daw is a weight use to control ICA dimensionality. It may be raised (e.g., from 10 to 20) to account for a low number of timepoints or lowered (e.g., from 10 to 5) if meica does not converge.",
+      "default": 10,
+      "type": "integer"
+    },
+    
+    "volreg_align_e2a": {
+      "description": "Align EPI to anatomical, rather than anatomical to EPI",
+      "type": "boolean",
+      "default": true
+    },
+    "volreg_tlrc_warp": {
+      "description": "With this option, the EPI data will be warped to standard space\n            in the volreg processing block.  All further processing through\n            regression will be done in standard space.\n\n            Warping is done with volreg to apply both the volreg and tlrc\n            transformations in a single step (so a single interpolation of the\n            EPI data).  The volreg transformations (for each volume) are stored\n            and multiplied by the +tlrc transformation, while the volume\n            registered EPI data is promptly ignored.",
+      "default": true,
+      "type": "boolean"
+    },
+    "volreg_align_to": {
+      "description": "This option takes 'first', 'third', 'last' or 'MIN_OUTLIER' as a parameter.  It specifies whether the EPI volumes are registered to the first or third volume (of the first run), the last volume (of the last run), or the volume that is consider a minimum outlier. The choice of 'first' or 'third' might correspond with when the anatomy was acquired before the EPI data.  The choice of 'last' might correspond to when the anatomy was acquired after the EPI data.",
+      "default": "MIN_OUTLIER",
+      "type": "string",
+      "enum": [
+        "first",
+        "third",
+        "last",
+        "MIN_OUTLIER"
+      ]
+    },
+    "anat_has_skull": {
+      "description": "Does the anatomical have a skull? (true=yes, false=no)",
+      "default": false,
+      "type": "boolean"
+
+    },
+    "tlrc_no_ss": {
+      "description": "This option is used to tell afni not to perform the skull strip operation on the tlrc base image",
+      "default": true,
+      "type": "boolean"
+    },    
+    
+    "regress_motion_per_run": {
+      "description": "regress motion parameters from each run\n\n                default: regress motion parameters catenated across runs\n\n            By default, motion parameters from the volreg block are catenated\n            across all runs, providing 6 (assuming 3dvolreg) regressors of no\n            interest in the regression block.\n\n            With -regress_motion_per_run, the motion parameters from each run\n            are used as separate regressors, providing a total of (6 * nruns)\n            regressors.\n\n            This allows for the magnitudes of the regressors to vary over each\n            run, rather than using a single (best) magnitude over all runs.\n            So more motion-correlated variance can be accounted for, at the\n            cost of the extra degrees of freedom (6*(nruns-1)).",
+      "default": true,
+      "type": "boolean"
+    },
+    "regress_censor_motion": {
+      "description": "This option is used to censor TRs where the subject moved too much.\n            \"Too much\" is decided by taking the derivative of the motion\n            parameters (ignoring shifts between runs) and the sqrt(sum squares)\n            per TR.  If this Euclidean Norm exceeds the given LIMIT, the TR\n            will be censored.",
+      "type": "number",
+      "default": 0.2
+    },
+    "mask_epi_anat": {
+      "description": "apply epi_anat mask in place of EPI mask.  An EPI mask might be applied to the data either for simple\n            computations (e.g. global brain correlation, GCOR), or actually\n            applied to the EPI data.  The EPI mask $full_mask is used for most\n            such computations, by default.\n\n            The mask_epi_anat dataset is an intersection of full_mask and\n            mask_anat, and might be better suited to such computations.\n\n            Use this option to apply mask_epi_anat in place of full_mask.",
+      "type": "boolean",
+      "default": true
+    },
+    "smoothing": {
+      "description": "FWHM of smoothing kernel (0 for none)",
+      "default": 4,
+      "type": "number"
+    },
+    "regress_censor_outliers": {
+      "description": "censor TRs with excessive outliers\n\nThis option is used to censor TRs where too many voxels are flagged\n            as outliers by 3dToutcount.  LIMIT should be in [0.0, 1.0], as it\n            is a limit on the fraction of masked voxels.",
+      "default": 0.05,
+      "type": "number"
+    },
+    "regress_apply_mot_types": {
+      "description": "specify motion regressors, separated by a space.\n\n   By default, the motion parameters from 3dvolreg are applied in the\n            regression, but after first removing the mean, per run.  This is\n            the application of the 'demean' regressors.\n\n            This option gives the ability to choose a combination of:\n\n                basic:  dfile_rall.1D - the parameters straight from 3dvolreg\n                        (or an external motion file, see -regress_motion_file)\n                demean: 'basic' params with the mean removed, per run\n                deriv:  per-run derivative of 'basic' params (de-meaned)",
+      "default": "demean deriv",
+      "type": "string"
+    },
+    "regress_est_blur_epits": {
+      "description": "estimate the smoothness of the EPI data. This option specifies to run 3dFWHMx on each of the EPI datasets\n            used for regression, the results of which are averaged.  These blur\n            values are saved to the file blur_est.$subj.1D, along with any\n            similar output from errts.\n\n            These blur estimates may be input to 3dClustSim, for any multiple\n            testing correction done for this subject.  If 3dClustSim is run at\n            the group level, it is reasonable to average these estimates\n            across all subjects (assuming they were scanned with the same\n            protocol and at the same scanner).\n\n            The mask block is required for this operation (without which the\n            estimates are not reliable).",
+      "default": true,
+      "type": "boolean"
+    },
+    "combine_method": {
+      "description": "When using the 'combine' block to combine echoes (for each run), this option can be used to specify the method used. Please see '@compute_OC_weights -help' for more information.",
+      "default": "tedana_OC",
+      "type": "string",
+      "enum": [
+        "mean",
+        "OC",
+        "OC_A",
+        "OC_B",
+        "OC_tedort",
+        "tedana",
+        "tedana_OC",
+        "tedana_OC_tedort"
+      ]
+    }
+  }, 
+  "inputs": {
+    "api_key": {
+      "base": "api-key"
+    },
+    
+    "functional": {
+      "description": "Functional DICOM dataset (Required).",
+      "base": "file",
+      "type": {
+        "enum": [
+          "dicom"
+        ]
+      }
+    },
+    "anatomical": {
+      "description": "Anatomical NIfTI file (Optional).",
+      "optional": true,
+      "base": "file",
+      "type": {
+        "enum": [
+          "nifti"
+        ]
+      }
+    }
+  }
+}
