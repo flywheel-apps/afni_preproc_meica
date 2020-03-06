@@ -242,8 +242,8 @@ def build_afni_proc_call(config):
         for key in supported_afni_opts.keys():
             kind = supported_afni_opts[key]
             
-            if isinstance(kind,list):
-                kind=kind[0]
+            if isinstance(kind, list):
+                kind = kind[0]
                 
             if key in config:
                 
@@ -260,12 +260,13 @@ def build_afni_proc_call(config):
                 elif kind == Path or kind == int or kind == float:
                     data = config[key]
                     
-                    if isinstance(data,list):
+                    if isinstance(data, list):
                         data = ' '.join([str(item) for item in data])
                     else:
                         data = '{data}'.format(data=data)
                     
-                    append = ['-{}'.format(key), '{}'.format(data)]
+                    append = ['-{}'.format(key)]
+                    append.extend('{}'.format(data).split(' '))
                     
                 # If the expected type is string
                 elif kind == str:
@@ -274,7 +275,8 @@ def build_afni_proc_call(config):
                     if isinstance(data,list):
                         data = ' '.join(data)
 
-                    append = ['-{}'.format(key), '{}'.format(data)]
+                    append = ['-{}'.format(key)]
+                    append.extend('{}'.format(data).split(' '))
                     
                 # If we need the type to be yn (yes/no), the data coming in is a boolean.
                 elif kind == 'yn':
@@ -284,7 +286,8 @@ def build_afni_proc_call(config):
                     else:
                         data = 'no'
 
-                    append = ['-{}'.format(key), '{}'.format(data)]
+                    append = ['-{}'.format(key)]
+                    append.extend('{}'.format(data).split(' '))
                     
                 elif kind == bool:
                     data = config[key]
@@ -504,15 +507,20 @@ def debug_main(context):
     config['combine_opts_tedana'] = 'DUMMY'
     
     command = build_afni_proc_call(config)
-    print(command)
     
     os.chdir(output_directory)
-    pr = sp.Popen(command)
+
+    echo_command = ['echo']
+    echo_command.extend(command)
+    pr = sp.Popen(echo_command)
     pr.wait()
     
-    run_afni = ['tcsh', '-xef', 'proc.data', '2>&1', '|', 'tee output.proc.data']
+    pr = sp.Popen(command, cwd=output_directory)
+    pr.wait()
     
-    pr = sp.Popen(run_afni)
+    run_afni = '/usr/bin/tcsh -xef proc.data 2>&1 | tee output.proc.data'
+    pr = sp.Popen(run_afni, cwd=output_directory, shell=True)
+
     pr.wait()
     
     
