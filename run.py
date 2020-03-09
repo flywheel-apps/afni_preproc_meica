@@ -6,11 +6,11 @@ import zipfile
 import logging
 import datetime
 import os
-import subprocess as sp
 from pathlib import Path
 import psutil
-import flywheel
 
+import flywheel
+import afni_utils as af
 
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(format=FORMAT)
@@ -302,36 +302,23 @@ def debug_config():
             'combine_opts_tedana':'Dummy.  Points to kdaw'}
     return(config)
 
+
 def debug_main(context):
     
-    # logging.basicConfig(level=gear_context.config['gear-log-level'], format=fmt)
-
-
-    log.setLevel(getattr(logging, 'DEBUG'))
-    logging.getLogger('MEICA').setLevel(logging.INFO)
     log.info('  start: %s' % datetime.datetime.utcnow())
-
     log_system_resources()
 
     ############################################################################
     # READ CONFIG
-
-    ############################################################################
-    # READ CONFIG
-
-    # CONFIG_FILE_PATH = '/flywheel/v0/config.json'
-    # with open(CONFIG_FILE_PATH, 'r') as config_file:
-    #     context = json.load(config_file)
-    config=context.config
-    #config = debug_config()
+    config = context.config
+    
     ############################################################################
     # FIND AND DOWNLOAD DATA
-
     output_directory = '/flywheel/v0/output'
     datasets, tes = get_meica_data(context, output_directory)
+    
     ############################################################################
     # INPUTS
-
     anatomical_input = context.get_input_path('anatomical')
 
     # Anatomical nifti must be in the output directory when running meica
@@ -342,24 +329,12 @@ def debug_main(context):
     config['dsets_me_run'] = datasets
     config['echo_times'] = tes
     config['tlrc_base'] = Path('/root/abin/{}'.format(config['tlrc_base']))
-    config['combine_opts_tedana'] = 'DUMMY'
+    config['combine_opts_tedana'] = 'DUMMY' # This just needs to be here because of the wonky 
+    # Way I build the NIFTI argument.  Nicolas, before you say it, yes, I'm sure NiPype would help.
     
-    command = build_afni_proc_call(config)
+    command = af.build_afni_proc_call(config)
     
-    os.chdir(output_directory)
-
-    echo_command = ['echo']
-    echo_command.extend(command)
-    pr = sp.Popen(echo_command)
-    pr.wait()
     
-    pr = sp.Popen(command, cwd=output_directory)
-    pr.wait()
-    
-    run_afni = '/usr/bin/tcsh -xef proc.data 2>&1 | tee output.proc.data'
-    pr = sp.Popen(run_afni, cwd=output_directory, shell=True)
-
-    pr.wait()
     
     
     return 0
