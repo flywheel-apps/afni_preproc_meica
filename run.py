@@ -1,79 +1,42 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import json
 import shutil
-import zipfile
 import logging
 import datetime
 import os
 from pathlib import Path
 import psutil
+from os import path as op
+import json
 
 import flywheel
 import afni_utils as af
+
 
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(format=FORMAT)
 log = logging.getLogger('meica')
 log.setLevel('INFO')
 
+def set_environment(environ_json = '/tmp/gear_environ.json'):
 
+    # Let's ensure that we have our environment .json file and load it up
+    if op.exists(environ_json):
 
+        # If it exists, read the file in as a python dict with json.load
+        with open(environ_json, 'r') as f:
+            log.info('Loading gear environment')
+            environ = json.load(f)
 
-def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=True, deflate=True):
-    """Create a zip archive from a directory.
-
-    Note that this function is designed to put files in the zip archive with
-    either no parent directory or just one parent directory, so it will trim any
-    leading directories in the filesystem paths and not include them inside the
-    zip archive paths. This is generally the case when you want to just take a
-    directory and make it into a zip file that can be extracted in different
-    locations.
-
-    Keyword arguments:
-
-    dirPath -- string path to the directory to archive. This is the only
-    required argument. It can be absolute or relative, but only one or zero
-    leading directories will be included in the zip archive.
-
-    zipFilePath -- string path to the output zip file. This can be an absolute
-    or relative path. If the zip file already exists, it will be updated. If
-    not, it will be created. If you want to replace it from scratch, delete it
-    prior to calling this function. (default is computed as dirPath + ".zip")
-
-    includeDirInZip -- boolean indicating whether the top level directory should
-    be included in the archive or omitted. (default True)
-
-"""
-    if deflate:
-        mode = zipfile.ZIP_DEFLATED
+        # Now set the current environment using the keys.  This will automatically be used with any sp.run() calls,
+        # without the need to pass in env=...  Passing env= will unset all these variables, so don't use it if you do it
+        # this way.
+        for key in environ.keys():
+            os.environ[key] = environ[key]
     else:
-        mode = zipfile.ZIP_STORED
-    if not zipFilePath:
-        zipFilePath = dirPath + ".zip"
-    if not os.path.isdir(dirPath):
-        raise OSError("dirPath argument must point to a directory. "
-            "'%s' does not." % dirPath)
-    parentDir, dirToZip = os.path.split(dirPath)
-    #Little nested function to prepare the proper archive path
-    def trimPath(path):
-        archivePath = path.replace(parentDir, "", 1)
-        if parentDir:
-            archivePath = archivePath.replace(os.path.sep, "", 1)
-        if not includeDirInZip:
-            archivePath = archivePath.replace(dirToZip + os.path.sep, "", 1)
-        return os.path.normcase(archivePath)
-
-    outFile = zipfile.ZipFile(zipFilePath, "w", mode, allowZip64=True)
-    for (archiveDirPath, dirNames, fileNames) in os.walk(dirPath):
-        for fileName in fileNames:
-            filePath = os.path.join(archiveDirPath, fileName)
-            outFile.write(filePath, trimPath(filePath))
-        # Make sure we get empty directories as well
-        if not fileNames and not dirNames:
-            zipInfo = zipfile.ZipInfo(trimPath(archiveDirPath) + "/")
-            outFile.writestr(zipInfo, "")
-    outFile.close()
+        log.warning('No Environment file found!')
+    # Pass back the environ dict in case the run.py program has need of it later on.
+    return environ
 
 
 def get_meica_data(context, output_directory='/flywheel/v0/output'):
@@ -145,169 +108,12 @@ def log_system_resources():
         
     log.info('\n\n==============================================================================\n')
     
-    
-
-
-
 
 def main(context):
-    """
-    Run meica on a given dataset.
-    """
-
-    # logging.basicConfig(level=gear_context.config['gear-log-level'], format=fmt)
-    log.setLevel(context.config['gear-log-level'])
-    log.info('log level is ' + context.config['gear-log-level'])
-    context.log_config()  # not configuring the log but logging the config
-    config = context.config
-
-    log.setLevel(getattr(logging, 'DEBUG'))
-    logging.getLogger('MEICA').setLevel(logging.INFO)
-    log.info('  start: %s' % datetime.datetime.utcnow())
-    
-    log_system_resources()
-
-    ############################################################################
-    # READ CONFIG
-
-    CONFIG_FILE_PATH = '/flywheel/v0/config.json'
-    with open(CONFIG_FILE_PATH, 'r') as config_file:
-        config = json.load(config_file)
-
-
-    ############################################################################
-    # FIND AND DOWNLOAD DATA
-
-    output_directory = '/flywheel/v0/output'
-    meica_data, prefix, tpattern_file, repetition_time = get_meica_data(config, output_directory)
-
-
-    ############################################################################
-    # INPUTS
-
-    if config['inputs'].get('anatomical'): # Optional
-        anatomical_input = config['inputs'].get('anatomical').get('location').get('path')
-
-        # Anatomical nifti must be in the output directory when running meica
-        anatomical_nifti = os.path.join(output_directory, os.path.basename(anatomical_input))
-        shutil.copyfile(anatomical_input, anatomical_nifti)
-    else:
-        anatomical_nifti = ''
-
-    if config['inputs'].get('slice_timing'): # Optional
-        slice_timing_input = config['inputs'].get('slice_timing').get('location').get('path')
-
-        # File must be in the output directory when running meica
-        slice_timing_file = os.path.join(output_directory, os.path.basename(slice_timing_input))
-        shutil.copyfile(slice_timing_input, slice_timing_file)
-    else:
-        slice_timing_input = ''
-
-
-    ############################################################################
-    # CONFIG OPTIONS
-
-    basetime = config.get('config').get('basetime') # Default = "0"
-    mni = config.get('config').get('mni') # Default = False
-    tr = config.get('config').get('tr', '') # No default
-    if not tr and repetition_time:
-        tr = repetition_time
-    cpus = config.get('config').get('cpus')
-    no_axialize = config.get('config').get('no_axialize')
-    native = config.get('config').get('native')
-    keep_int = config.get('config').get('keep_int')
-    tpattern_gen = config.get('config').get('tpattern_gen')
-    daw = config.get('config').get('daw')
-
-    ############################################################################
-    # RUN MEICA
-
-    dataset_cmd = '-d %s' % (','.join([ x['path'] for x in meica_data ]))
-    echo_cmd = '-e %s' % (','.join([ str(x['te']) for x in meica_data ]))
-    anatomical_cmd = '-a %s' % (os.path.basename(anatomical_nifti)) if anatomical_nifti else ''
-    mni_cmd = '--MNI' if mni else ''
-    tr_cmd = '--TR %s' % (str(tr)) if tr else ''
-    cpus_cmd = '--cpus %s' % (str(cpus)) if cpus else ''
-    no_axialize_cmd = '--no_axialize' if no_axialize else ''
-    native_cmd = '--native' if native else ''
-    keep_int_cmd = '--keep_int' if keep_int else ''
-    if slice_timing_input:
-        tpattern_cmd = '--tpattern=@%s' % (os.path.basename(slice_timing_input))
-        log.info('Using user-provided slice-timing file...')
-    else:
-        tpattern_cmd = '--tpattern=@%s' % (tpattern_file) if tpattern_file and tpattern_gen else ''
-
-    # Run the command
-    command = 'cd %s && /flywheel/v0/me-ica/meica.py %s %s -b %s %s %s %s %s %s %s %s %s --prefix %s --daw %s' % ( output_directory,
-            dataset_cmd,
-            echo_cmd,
-            basetime,
-            anatomical_cmd,
-            mni_cmd,
-            tr_cmd,
-            cpus_cmd,
-            no_axialize_cmd,
-            native_cmd,
-            keep_int_cmd,
-            tpattern_cmd,
-            prefix,
-            daw )
-
-    log.info(command)
-    status = os.system(command)
-
-    if status == 0:
-        log.info('Command exited with 0 status. Compressing outputs...')
-        dirs = [ os.path.join(output_directory, x)
-                        for x in os.listdir(output_directory)
-                        if os.path.isdir(os.path.join(output_directory, x))
-                ]
-        for d in dirs:
-            out_zip = os.path.join(output_directory, os.path.basename(d) + '.zip')
-            log.info('Generating %s... ' % (out_zip))
-            zipdir(d, out_zip, os.path.basename(d))
-            shutil.rmtree(d)
-
-    log.info('Done: %s' % datetime.datetime.utcnow())
-
-    os.sys.exit(status)
-
-def debug_config():
-    config={"gear-log-level": "DEBUG", 
-            "reg_echo": 2,
-            "type": "integer",
-            "tcat_remove_first_trs": 0,
-            "cost":"localPcor+",
-            "cpus": 2,
-            "tlrc_base": "MNI152_T1_2009c+tlrc",
-            "nonlinear_warp": True,
-            "daw": 10,
-            "volreg_align_e2a": True,
-            "volreg_tlrc_warp":True,
-            "volreg_align_to":"MIN_OUTLIER",
-            "anat_has_skull": False,
-            "tlrc_no_ss": True,
-            "regress_motion_per_run":True,
-            "regress_censor_motion": 0.2,
-            "mask_epi_anat": True,
-            "smoothing": 4,
-            "regress_censor_outliers":0.05,
-            "regress_apply_mot_types":"demean deriv",
-            "regress_est_blur_epits":True,
-            "combine_method": "tedana_OC",
-            "dsets_me_run": [Path('/home/data1/'),Path('/home/data2'),Path('/home/data3')],
-            'echo_times': [1.0,2.0,3.0],
-            "copy_anat": '/home/test/anatomical',
-            'tlrc_base' : Path('/root/abin/MNI152_2009c+tlrc'),
-            'combine_opts_tedana':'Dummy.  Points to kdaw'}
-    return(config)
-
-
-def debug_main(context):
     
     log.info('  start: %s' % datetime.datetime.utcnow())
-    log_system_resources()
-
+    return_code = 0
+    
     ############################################################################
     # READ CONFIG
     config = context.config
@@ -324,7 +130,8 @@ def debug_main(context):
     # Anatomical nifti must be in the output directory when running meica
     anatomical_nifti = os.path.join(output_directory, os.path.basename(anatomical_input))
     shutil.copyfile(anatomical_input, anatomical_nifti)
-
+    
+    # Set up some keys in config that will be used to build the AFNI call. 
     config['copy_anat'] = Path(anatomical_nifti)
     config['dsets_me_run'] = datasets
     config['echo_times'] = tes
@@ -332,13 +139,38 @@ def debug_main(context):
     config['combine_opts_tedana'] = 'DUMMY' # This just needs to be here because of the wonky 
     # Way I build the NIFTI argument.  Nicolas, before you say it, yes, I'm sure NiPype would help.
     
-    command = af.build_afni_proc_call(config)
+    # Build the AFNI command
+    log.info('Building AFNI command')
+    try:
+        command = af.build_afni_proc_call(config)
+    except Exception as e:
+        log.error('Error generating the AFNI command')
+        log.exception(e)
+        # If we can't build the call, we can't run it.  Return a nonzero exit code
+        return(1)
     
+    # Run the AFNI command
+    log.info('Running AFNI command')
+    try:
+        return_code = af.run_afni_command(command, output_directory)
+    except Exception as e:
+        log.error('Error running the AFNI command')
+        log.exception(e)
+        # It's possible there are files to clean up.  Set the return code to 1, but try to package
+        # Any output that's present
+        return_code = 1
     
+    # Cleanup the AFNI output/make nice for flywheel output containers:
+    log.info('Cleaning up AFNI output')
+    try:
+        af.cleanup_afni_output(output_directory)
+    except Exception as e:
+        log.error('Error cleaning up AFNI output directory')
+        log.exception(e)
+        return_code = 1
     
-    
-    return 0
-
+    return(return_code)
+        
 if __name__ == '__main__':
     log_system_resources()
     
@@ -346,7 +178,7 @@ if __name__ == '__main__':
         #gear_context.init_logging()
         # Error here when running from command line (even with manifest)
         # gear_context.log_config()
-        exit_status = debug_main(gear_context)
+        exit_status = main(gear_context)
 
     log.info('exit_status is %s', exit_status)
     os.sys.exit(exit_status)

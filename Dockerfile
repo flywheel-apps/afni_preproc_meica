@@ -14,11 +14,16 @@ RUN apt-get update && apt-get install -y software-properties-common && \
                         libssl-dev libgfortran3           \
                         gnome-terminal nautilus           \
                         gnome-icon-theme-symbolic         \
-                        firefox xfonts-100dpi git python-pip && \
+                        firefox xfonts-100dpi git python-pip python3-pip && \
                         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # DO NOT install nibabel (so MEICA uses local libraries)
 COPY requirements.txt ./requirements.txt
+COPY requirements_37.txt ./requirements_37.txt
+
+# These requirements are for the execution of the run.py python code
+RUN pip3 install update pip && pip3 install -r requirements_37.txt && rm -rf /root/.cache/pip3
+# These requirements are for the execution of AFNI's python code
 RUN pip install update pip && pip install -r requirements.txt && rm -rf /root/.cache/pip
 
 # Install AFNI binaries                  
@@ -36,5 +41,9 @@ RUN cp $HOME/abin/AFNI.afnirc $HOME/.afnirc && suma -update_env
 
 # May or may not actually use this
 RUN git clone https://github.com/ME-ICA/me-ica.git
-COPY run /flywheel/v0/run
-COPY run_meica.py /flywheel/v0/run_meica.py
+COPY run.py /flywheel/v0/run.py
+COPY afni_utils.py /flywheel/v0/afni_utils.py
+
+############################
+# ENV preservation for Flywheel Engine
+RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
