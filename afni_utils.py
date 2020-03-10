@@ -173,7 +173,7 @@ def run_afni_command(command, output_directory):
 
 def cleanup_afni_output(output_directory):
     
-    data_dir = Path(output_directory,'data.results')
+    data_dir = Path(output_directory, 'data.results')
     qc_dir = Path(data_dir, 'QC_data')
     qc_index = Path(qc_dir, 'index.html')
     packed_html = Path(output_directory, 'QC_Snapshot.html')
@@ -181,7 +181,7 @@ def cleanup_afni_output(output_directory):
     # First try to copy a standalone html file (with embedded images for viewing in flywheel)
     log.info('Generating standalone QC snapshot')
     try:
-        packed = htmlark.convert_page(qc_index)
+        packed = htmlark.convert_page(qc_index.as_posix())
         
         with open(packed_html, 'w') as packed_html_file:
             packed_html_file.write(packed)

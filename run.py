@@ -32,6 +32,7 @@ def set_environment(environ_json = '/tmp/gear_environ.json'):
         # without the need to pass in env=...  Passing env= will unset all these variables, so don't use it if you do it
         # this way.
         for key in environ.keys():
+            log.debug('{}: {}'.format(key, environ[key]))
             os.environ[key] = environ[key]
     else:
         log.warning('No Environment file found!')
@@ -111,6 +112,8 @@ def log_system_resources():
 
 def main(context):
     
+    environ = set_environment()
+    
     log.info('  start: %s' % datetime.datetime.utcnow())
     return_code = 0
     
@@ -156,8 +159,8 @@ def main(context):
     except Exception as e:
         log.error('Error running the AFNI command')
         log.exception(e)
-        # It's possible there are files to clean up.  Set the return code to 1, but try to package
-        # Any output that's present
+        # It's possible there are files to clean up.  so continue running, but if this part crashed,
+        # We consinder the gear failed
         return_code = 1
     
     # Cleanup the AFNI output/make nice for flywheel output containers:
