@@ -178,8 +178,8 @@ def run_afni_command(command, output_directory):
         log.critical('Error executing main processing script.  See output.proc.data for more info')
         return(pr.returncode)
     
-    # If we make it here, pr.returncode is zero, so...
-    return(0)
+    # If we make it here, pr.returncode is zero
+    return(pr.returncode)
     # I'm going to keep using parenthesis around return statements.  I've been hurt before with 
     # Print statements from python2 -> 3, I'm not making that same mistake twice.
 
