@@ -179,6 +179,7 @@
     
     "functional": {
       "description": "Functional DICOM dataset (Required).",
+      "optional": false,
       "base": "file",
       "type": {
         "enum": [

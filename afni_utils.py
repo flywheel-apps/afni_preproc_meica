@@ -12,7 +12,7 @@ import htmlark
 
 ####################################################################################################
 # Constants used in the script, to help decode AFNI's inconsistent key-value scheme.
-# Any new settings added to the manigest will also have to be added here. to be added to the call.
+# Any new settings added to the manifest will also have to be added here. to be added to the call.
 # Types:
 #   *Path: (could also be a string, I suppose, but this just lets me know it should be a file)
 #   *'yn': Lets me know that this is a boolean key, but the key must be followed by a "yes" (or no)
@@ -20,7 +20,6 @@ import htmlark
 #   *int: Key value is an int
 #   *bool: Key is bool.  include the key for true, omit for false.  No value passed with the key.
 #   *str: Key value is a string.
-#   [...]: Key value is a list of things.  Lets me know to concatenate list values with spaces
 
 supported_afni_opts = OrderedDict()
 supported_afni_opts['copy_anat'] = Path
@@ -46,8 +45,6 @@ supported_afni_opts['regress_apply_mot_types'] = str
 supported_afni_opts['regress_est_blur_epits'] = bool
 
 # Special lookup dictionary to translate cost function names to AFNI key values.
-# There were just too many odd combinations, of things you can do,
-# I Could have put more in the manifest, but this is easier.  Feel free to make suggestions.
 cost_lookup = {"leastsq": "ls",
                "mutualinfo": 'mi',
                "corratio_mul": "crM",
@@ -63,6 +60,7 @@ cost_lookup = {"leastsq": "ls",
 
 
 log = logging.getLogger(__name__)
+
 
 def build_afni_proc_call(config):
     
