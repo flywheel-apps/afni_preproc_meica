@@ -25,8 +25,8 @@ import htmlark
 supported_afni_opts = OrderedDict()
 supported_afni_opts['copy_anat'] = Path
 supported_afni_opts['anat_has_skull'] = 'yn'
-supported_afni_opts['dsets_me_run'] = [Path]
-supported_afni_opts['echo_times'] = [float]
+supported_afni_opts['dsets_me_run'] = Path
+supported_afni_opts['echo_times'] = float
 supported_afni_opts['reg_echo'] = str
 supported_afni_opts['tcat_remove_first_trs'] = int
 supported_afni_opts['cost'] = str
@@ -73,9 +73,6 @@ def build_afni_proc_call(config):
     try:
         for key in supported_afni_opts.keys():
             kind = supported_afni_opts[key]
-
-            if isinstance(kind, list):
-                kind = kind[0]
 
             if key in config:
 
