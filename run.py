@@ -160,17 +160,29 @@ def main(context):
         log.error('Error running the AFNI command')
         log.exception(e)
         # It's possible there are files to clean up.  so continue running, but if this part crashed,
-        # We consinder the gear failed
+        # We consider the gear failed
         return_code = 1
     
     # Cleanup the AFNI output/make nice for flywheel output containers:
     log.info('Cleaning up AFNI output')
     try:
+        # If it's not successful and the user did not ask to save output on error:
+        if return_code != 0 and not config['save-output-on-error']:
+            # Remove the directory
+            os.rmdir(output_directory)
+            # And remake it incase that messes things up with flywheel later idk
+            os.mkdir(output_directory)
+            
         af.cleanup_afni_output(output_directory)
     except Exception as e:
         log.error('Error cleaning up AFNI output directory')
         log.exception(e)
         return_code = 1
+    
+    
+    
+        
+        
     
     return(return_code)
         
