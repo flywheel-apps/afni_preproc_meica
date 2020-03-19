@@ -25,15 +25,15 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 
 # DO NOT install nibabel (so MEICA uses local libraries)
 COPY requirements.txt ./requirements.txt
-COPY requirements_37.txt ./requirements_37.txt
+#COPY requirements_37.txt ./requirements_37.txt
 
 # These requirements are for the execution of the run.py python code
-RUN pip3 install update pip && pip3 install -r requirements_37.txt && rm -rf /root/.cache/pip3
+RUN pip3 install update pip && pip3 install -r requirements.txt && rm -rf /root/.cache/pip3
 # These requirements are for the execution of AFNI's python code
 RUN pip install update pip && pip install -r requirements.txt && rm -rf /root/.cache/pip
 
 # Make a symbolic link for the specific version of GSL included in this version of Ubuntu.                
-RUN ln -s /usr/lib/x86_64-linux-gnu/libgsl.so.23 /usr/lib/x86_64-linux-gnu/
+RUN ln -s /usr/lib/x86_64-linux-gnu/libgsl.so.23 /usr/lib/x86_64-linux-gnu/libgsl.so.19
 
 # Install afni binaries:
 # Download and unpack the current binaries in your $HOME directory
