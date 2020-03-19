@@ -22,6 +22,11 @@
     }
   },
   "config": {
+    "save-output-on-error": {
+      "default": false,
+      "type": "boolean",
+      "description": "Save the output of the process even if the gear fails"
+    },
     "gear-log-level": {
       "default": "DEBUG",
       "description": "Gear Log verbosity level (ERROR|WARNING|INFO|DEBUG)",
