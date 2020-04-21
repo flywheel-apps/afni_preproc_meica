@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 
 # DO NOT install nibabel (so MEICA uses local libraries)
 COPY requirements.txt ./requirements.txt
-#COPY requirements_37.txt ./requirements_37.txt
 
 # These requirements are for the execution of the run.py python code
 RUN pip3 install update pip && pip3 install -r requirements.txt && rm -rf /root/.cache/pip3

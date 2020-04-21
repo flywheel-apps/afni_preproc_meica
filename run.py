@@ -170,7 +170,7 @@ def main(context):
         if return_code != 0 and not config['save-output-on-error']:
             # Remove the directory
             os.rmdir(output_directory)
-            # And remake it incase that messes things up with flywheel later idk
+            # And remake it in case that messes things up with flywheel later idk
             os.mkdir(output_directory)
             
         af.cleanup_afni_output(output_directory)
