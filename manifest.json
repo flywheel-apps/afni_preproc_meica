@@ -14,9 +14,9 @@
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/afni:0.4.2_20.0.18"
+      "image": "flywheel/afni-preproc-meica:0.4.2_20.0.18"
     },
-    "docker-image": "flywheel/afni:0.4.2_20.0.18",
+    "docker-image": "flywheel/afni-preproc-meica:0.4.2_20.0.18",
     "flywheel": {
       "suite": "AFNI"
     }
