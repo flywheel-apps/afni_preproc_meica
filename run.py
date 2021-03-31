@@ -88,7 +88,7 @@ def get_meica_data(context, output_directory='/flywheel/v0/output'):
     
 
 
-    return(datasets,tes)
+    return(datasets, tes)
 
 
 def log_system_resources():
