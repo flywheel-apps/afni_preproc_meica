@@ -1,22 +1,22 @@
 {
   "name": "afni-preproc-meica",
   "label": "AFNI multi-echo processing",
-  "description": "Multi-Echo Independent Components Analysis (ME-ICA) is a method for fMRI analysis and denoising based on the T2* decay of BOLD signals, as measured using multi-echo fMRI. ME-ICA decomposes multi-echo fMRI datasets into independent components (ICs) using FastICA, then categorizes ICs as BOLD or noise using their BOLD and non-BOLD weightings (measured as Kappa and Rho values, respectively). Removing non-BOLD weighted components robustly denoises data for motion, physiology and scanner artifacts, in a simple and physically principled way. Pipeline includes: 1. Preprocess multi-echo datasets and apply multi-echo ICA based on spatial concatenation. 2. Calculation of motion parameters based on images with highest contrast. 3. Application of motion correction and coregistration parameters. 4. EPI preprocessing (temporal alignment, smoothing, etc) in appropriate order. 5. Compute PCA and ICA in conjunction with TE-dependence analysis.",
+  "description": "AFNI multi-echo processing is a method for multi-echo fMRI analysis and denoising based on the afni_proc.py program. The gear contains basic AFNI preprocessing blocks and additionally, a user-specified method to combine multi-echo fMRI data (combine_method). The "tedana" combine_method will run ME-ICA denoising. Other combine method options are available and are explained in the afni_proc.py documentation found here: https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/programs/afni_proc.py_sphx.html ",
   "maintainer": "Flywheel <support@flywheel.io>",
   "author": "Prantik Kundu",
-  "url": "https://github.com/ME-ICA/me-ica/blob/master/README.meica",
-  "source": "https://github.com/flywheel-apps/afni_preproc_meica",
+  "url": "https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/programs/afni_proc.py_sphx.html",
+  "source": "https://tedana.readthedocs.io/en/latest/",
   "cite": "Kundu, P., Brenowitz, N.D., Voon, V., Worbe, Y., Vertes, P.E., Inati, S.J., Saad, Z.S., Bandettini, P.A. & Bullmore, E.T. Integrated strategy for improving functional connectivity mapping using multiecho fMRI. PNAS (2013). Kundu, P., Inati, S.J., Evans, J.W., Luh, W.M. & Bandettini, P.A. Differentiating BOLD and non-BOLD signals in fMRI time series using multi-echo EPI. NeuroImage (2011). http://dx.doi.org/10.1016/j.neuroimage.2011.12.028",
   "license": "Other",
   "flywheel": "0",
-  "version": "0.4.1_20.0.18",
+  "version": "0.4.2_20.0.18",
   "command": "python3 /flywheel/v0/run.py",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "dbp2123/afni:0.0.1_20.0.18"
+      "image": "flywheel/afni-preproc-meica:0.4.2_20.0.18"
     },
-    "docker-image": "dbp2123/afni:0.0.1_20.0.18",
+    "docker-image": "flywheel/afni-preproc-meica:0.4.2_20.0.18",
     "flywheel": {
       "suite": "AFNI"
     }
