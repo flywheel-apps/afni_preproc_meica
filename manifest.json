@@ -9,14 +9,14 @@
   "cite": "Taylor PA, Chen G, Glen DR, Rajendra JK, Reynolds RC, Cox RW (2018). FMRI processing with AFNI: Some comments and corrections on ‘Exploring the Impact of Analysis Software on Task fMRI Results’. bioRxiv 308643",
   "license": "Other",
   "flywheel": "0",
-  "version": "0.4.3_20.0.18",
+  "version": "0.4.4_20.0.18",
   "command": "python3 /flywheel/v0/run.py",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/afni-preproc-meica:0.4.3_20.0.18"
+      "image": "flywheel/afni-preproc-meica:0.4.2_20.0.18"
     },
-    "docker-image": "flywheel/afni-preproc-meica:0.4.3_20.0.18",
+    "docker-image": "flywheel/afni-preproc-meica:0.4.2_20.0.18",
     "flywheel": {
       "suite": "AFNI"
     }

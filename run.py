@@ -141,6 +141,19 @@ def main(context):
     anatomical_nifti = os.path.join(
         output_directory, os.path.basename(anatomical_input)
     )
+
+    # If a file with the same name as the anatomical exists already, we must rename it so afni can run correctly.
+    if os.path.exists(anatomical_nifti):
+        # Strip down to the first extension dot
+        basename = os.path.basename(anatomical_input)
+        first_dot = basename.find('.')
+        # and add "_T1" to the name, reappending the extension
+        basename = basename[:first_dot] + "_T1" + basename[first_dot:]
+        anatomical_nifti = os.path.join(output_directory, basename)
+
+    shutil.copyfile(anatomical_input, anatomical_nifti)
+    # anatomical_nifti = context.get_input_path('anatomical')
+
     shutil.copyfile(anatomical_input, anatomical_nifti)
 
     # Set up some keys in config that will be used to build the AFNI call.
