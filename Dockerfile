@@ -57,7 +57,7 @@ RUN cp $HOME/abin/AFNI.afnirc $HOME/.afnirc && suma -update_env
 #################################################################################################
 
 # May or may not actually use this
-RUN git clone https://github.com/ME-ICA/me-ica.git
+#RUN git clone https://github.com/ME-ICA/me-ica.git
 COPY run.py /flywheel/v0/run.py
 COPY afni_utils.py /flywheel/v0/afni_utils.py
 

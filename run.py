@@ -62,6 +62,8 @@ def get_meica_data(context, output_directory="/flywheel/v0/output"):
         "Found %d Functional NIfTI files in %s" % (len(nifti_files), acquisition.label)
     )
 
+    if len(nifti_files) == 0:
+        log.error('No nifti files found in provided DICOM acquisition.  Nifti files must have intent "Functional" to be used.')
     # Compile meica_data structure
     meica_data = []
     repetition_time = ""
@@ -142,6 +144,7 @@ def main(context):
         output_directory, os.path.basename(anatomical_input)
     )
 
+    log.debug(f'Checking if {anatomical_nifti} exists in output directory already')
     # If a file with the same name as the anatomical exists already, we must rename it so afni can run correctly.
     if os.path.exists(anatomical_nifti):
         # Strip down to the first extension dot
@@ -193,7 +196,7 @@ def main(context):
         # If it's not successful and the user did not ask to save output on error:
         if return_code != 0 and not config["save-output-on-error"]:
             # Remove the directory
-            os.rmdir(output_directory)
+            shutil.rmtree(output_directory, ignore_errors=True)
             # And remake it in case that messes things up with flywheel later idk
             os.mkdir(output_directory)
 

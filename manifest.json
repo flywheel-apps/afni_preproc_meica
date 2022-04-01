@@ -9,12 +9,12 @@
   "cite": "Taylor PA, Chen G, Glen DR, Rajendra JK, Reynolds RC, Cox RW (2018). FMRI processing with AFNI: Some comments and corrections on ‘Exploring the Impact of Analysis Software on Task fMRI Results’. bioRxiv 308643",
   "license": "Other",
   "flywheel": "0",
-  "version": "0.4.4_20.0.18",
+  "version": "0.5.0_20.0.18",
   "command": "python3 /flywheel/v0/run.py",
   "custom": {
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/afni-preproc-meica:0.4.2_20.0.18"
+      "image": "flywheel/afni-preproc-meica:0.5.0_20.0.18"
     },
     "docker-image": "flywheel/afni-preproc-meica:0.4.2_20.0.18",
     "flywheel": {
@@ -114,6 +114,18 @@
         "MIN_OUTLIER"
       ]
     },
+    "volreg_method":
+    {
+      "description": "This option takes 'first', 'third', 'last' or 'MIN_OUTLIER' as a parameter.  It specifies whether the EPI volumes are registered to the first or third volume (of the first run), the last volume (of the last run), or the volume that is consider a minimum outlier. The choice of 'first' or 'third' might correspond with when the anatomy was acquired before the EPI data.  The choice of 'last' might correspond to when the anatomy was acquired after the EPI data.",
+      "default": "MIN_OUTLIER",
+      "type": "string",
+      "enum": [
+        "first",
+        "third",
+        "last",
+        "MIN_OUTLIER"
+      ]
+    },
     "anat_has_skull": {
       "description": "Does the anatomical have a skull? (true=yes, false=no)",
       "default": false,
@@ -143,8 +155,8 @@
     },
     "smoothing": {
       "description": "FWHM of smoothing kernel (0 for none)",
-      "default": 4,
-      "type": "number"
+      "default": "4mm",
+      "type": "string"
     },
     "regress_censor_outliers": {
       "description": "censor TRs with excessive outliers\n\nThis option is used to censor TRs where too many voxels are flagged\n            as outliers by 3dToutcount.  LIMIT should be in [0.0, 1.0], as it\n            is a limit on the fraction of masked voxels.",
